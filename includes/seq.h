@@ -68,12 +68,18 @@ namespace mdspan::detail{
 
     template< ptrdiff_t dims >
     struct make_seq<dims>{
+        static_assert(dims != static_dims,"Invalid dimensions");
         using type = make_seq_dynamic_t<dims>;
     };
+
+    // template< >
+    // struct make_seq<static_dims>{
+    //     using type = make_seq_impl_t<>;
+    // };
     
-    template< ptrdiff_t ...Extents >
-    struct make_seq<static_dims, Extents...>{
-        using type = make_seq_impl_t<Extents...>;
+    template< ptrdiff_t el, ptrdiff_t ...Extents >
+    struct make_seq<static_dims, el, Extents...>{
+        using type = make_seq_impl_t<el, Extents...>;
     };
 
     template < ptrdiff_t dims, ptrdiff_t ...Extents >

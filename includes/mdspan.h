@@ -43,6 +43,10 @@ namespace mdspan{
         constexpr extents(IndexType ...DynamicExtents) 
             : impl(DynamicExtents...){}
 
+        template< typename IndexType>
+        constexpr extents(std::initializer_list<IndexType> li) 
+            : impl(li.begin(),li.end()){}
+
         ~extents() = default;
 
     private:

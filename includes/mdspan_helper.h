@@ -2,17 +2,9 @@
 #define MDSPAN_HELPER_H
 
 #include "seq.h"
+#include <initializer_list>
 
 namespace mdspan::detail{
-
-
-    template < ptrdiff_t lhs, ptrdiff_t rhs>
-    struct equal{
-        static constexpr bool value = ( lhs == rhs );
-    };
-
-    template < ptrdiff_t lhs, ptrdiff_t rhs>
-    bool equal_t = equal<lhs,rhs>::value;
 
     template< int R, typename Seq >
     struct extents_impl;
@@ -38,8 +30,10 @@ namespace mdspan::detail{
 
         constexpr extents_impl() noexcept = default;
         constexpr extents_impl(extents_impl const& other) noexcept = default;
-        constexpr extents_impl(extents_impl && other) noexcept = default;
         constexpr extents_impl& operator=(extents_impl const& other) noexcept = default;
+
+        template< typename ForwordIterator >
+        constexpr extents_impl( ForwordIterator* begin, ForwordIterator* end) noexcept{}
 
         template<typename T>
         constexpr extents_impl(T const* const) noexcept{}
@@ -80,12 +74,15 @@ namespace mdspan::detail{
 
         constexpr extents_impl() noexcept : next(), N(0) {}
         constexpr extents_impl(extents_impl const& other) noexcept = default;
-        constexpr extents_impl(extents_impl && other) noexcept = default;
         constexpr extents_impl& operator=(extents_impl const& other) noexcept = default;
         
         template< typename ...IndexType >
-        explicit constexpr extents_impl( ptrdiff_t total_dimension, IndexType ...DynamicExtents ) noexcept
-            :N(total_dimension),next(DynamicExtents...){}
+        explicit constexpr extents_impl( ptrdiff_t ND, IndexType ...DynamicExtents ) noexcept
+            :N(ND),next(DynamicExtents...){}
+        
+        template< typename ForwordIterator >
+        constexpr extents_impl( ForwordIterator* begin, ForwordIterator* end) noexcept
+            :N(*begin),next(begin + 1, end){}
 
         template< typename T >
         explicit constexpr extents_impl( T const * const DN ) noexcept
@@ -126,12 +123,15 @@ namespace mdspan::detail{
 
         constexpr extents_impl() noexcept = default;
         constexpr extents_impl(extents_impl const& other) noexcept = default;
-        constexpr extents_impl(extents_impl && other) noexcept = default;
         constexpr extents_impl& operator=(extents_impl const& other) noexcept = default;
         
         template< typename ...IndexType >
         explicit constexpr extents_impl( IndexType ...DynamicExtents ) noexcept
             : next(DynamicExtents...){}
+
+        template< typename ForwordIterator >
+        constexpr extents_impl( ForwordIterator* begin, ForwordIterator* end) noexcept
+            : next( begin , end ){}
         
         template< typename T >
         explicit constexpr extents_impl( T const * const DN ) noexcept
