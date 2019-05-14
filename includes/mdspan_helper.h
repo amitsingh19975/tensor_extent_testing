@@ -35,9 +35,6 @@ namespace mdspan::detail{
         template< typename ForwordIterator >
         constexpr extents_impl( ForwordIterator* begin, ForwordIterator* end) noexcept{}
 
-        template<typename T>
-        constexpr extents_impl(T const* const) noexcept{}
-
         constexpr auto in_bound() const noexcept{
             return true;
         }
@@ -84,10 +81,6 @@ namespace mdspan::detail{
         constexpr extents_impl( ForwordIterator* begin, ForwordIterator* end) noexcept
             :N(*begin),next(begin + 1, end){}
 
-        template< typename T >
-        explicit constexpr extents_impl( T const * const DN ) noexcept
-            : next( DN + 1 ), N(*DN) {}
-
         template< typename IndexType , typename ... Args >
         constexpr bool in_bounds( IndexType const & idx , Args ... args ) const noexcept
             { return 0 <= idx && idx < N && next::in_bounds( args... ); }
@@ -132,10 +125,6 @@ namespace mdspan::detail{
         template< typename ForwordIterator >
         constexpr extents_impl( ForwordIterator* begin, ForwordIterator* end) noexcept
             : next( begin , end ){}
-        
-        template< typename T >
-        explicit constexpr extents_impl( T const * const DN ) noexcept
-            : next( DN + 1 ) {}
 
         template< typename IndexType , typename ... Args >
         constexpr bool in_bounds( IndexType const & idx , Args ... args ) const noexcept
