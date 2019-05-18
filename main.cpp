@@ -8,7 +8,6 @@ int main(int argc, char const *argv[]) {
     extents<3,1,2,3> e; //static dimension
     // extents<static_dims> t; //static dimension
     extents<4> f = {5,6,7,8};  //dynamic dimension
-    auto g = f.squeeze();
     // cout<<boolalpha<<(f==e)<<'\n';
 
     for(auto i = 0; i < e.rank(); i++){
