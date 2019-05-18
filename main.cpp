@@ -16,8 +16,8 @@ int main(int argc, char const *argv[]) {
 
     cout<<'\n';
 
-    for(auto i = 0; i < g.size(); i++){
-        cout<<g.at(i)<<' ';
+    for(auto i = 0; i < f.rank(); i++){
+        cout<<f.at(i)<<' ';
     }
 
     cout<<'\n';
