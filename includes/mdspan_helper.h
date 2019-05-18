@@ -3,6 +3,7 @@
 
 #include "seq.h"
 #include <initializer_list>
+#include <array>
 
 namespace mdspan::detail{
 
@@ -45,6 +46,7 @@ namespace mdspan::detail{
     template< int R, ptrdiff_t ...Tail >
     struct extents_impl< R, seq<dynamic_extent, Tail...> > 
         : extents_impl < R + 1, seq<Tail...> > {
+        
         using next = extents_impl < R + 1, seq<Tail...> >;
 
         static constexpr int Rank           = 1 + next::Rank;
@@ -90,7 +92,9 @@ namespace mdspan::detail{
     };
 
     template< int R, ptrdiff_t SN, ptrdiff_t ...Tail >
-    struct extents_impl< R, seq<SN, Tail...> > : extents_impl < R + 1, seq<Tail...> > {
+    struct extents_impl< R, seq<SN, Tail...> > 
+        : extents_impl < R + 1, seq<Tail...> > {
+
         using next = extents_impl < R + 1, seq<Tail...> >;
 
         static constexpr int Rank           = 1 + next::Rank;
@@ -133,6 +137,71 @@ namespace mdspan::detail{
 
         ~extents_impl() = default;
     };
+
+    template< typename E >
+    struct is_extent_impl : std::false_type{};
+
+    template< int R, typename Seq  >
+    struct is_extent_impl< extents_impl<R,Seq> > : std::true_type{};
+
+}
+
+namespace mdspan{
+    
+    template< ptrdiff_t dims, ptrdiff_t ... StaticExtents >
+    struct extents ;
+        
+    template < ptrdiff_t dims_1, ptrdiff_t dims_2, ptrdiff_t el_1, ptrdiff_t... lhs, ptrdiff_t el_2, ptrdiff_t... rhs>
+    auto concat_extent(extents< dims_1, el_1, lhs... > const& lhs_extent, 
+        extents< dims_2, el_2, rhs... > const& rhs_extent ){
+
+        return extents< ( dims_1 + dims_2 ), el_1, lhs..., el_2, rhs... >{};
+    } 
+
+    template < ptrdiff_t dims_1, ptrdiff_t dims_2, ptrdiff_t el, ptrdiff_t... lhs>
+    auto concat_extent(extents< dims_1, el, lhs... > const& lhs_extent, 
+        extents< dims_2 > const& rhs_extent ){
+        
+            auto const dims = dims_1 + dims_2;
+            using type = extents< dims >;
+            std::array<ptrdiff_t,dims> arr;
+            
+            size_t j = 0;
+            for( auto i = 0u; i < arr.size(); i++){
+                if( i < dims_1 ){
+                    arr[i] = lhs_extent.extent(i);
+                }else{
+                    arr[i] = rhs_extent.extent(j++);
+                }
+            }
+            return type( arr.begin(), arr.end() );
+        } 
+
+    template < ptrdiff_t dims_1, ptrdiff_t dims_2, ptrdiff_t el, ptrdiff_t... rhs>
+    auto concat_extent(extents< dims_1> const& lhs_extent, 
+        extents< dims_2, el, rhs... > const& rhs_extent ){
+            return concat_extent(rhs_extent,lhs_extent);
+    } 
+
+
+    template < ptrdiff_t dims, ptrdiff_t... lhs>
+    auto remove_extent_item(extents< dims, lhs... > const& lhs_extent, size_t pos){
+        static_assert(dims > ptrdiff_t{0});
+        
+        using type = extents< dims - 1 >;
+        std::array<ptrdiff_t,dims - 1> arr;
+
+        auto j = 0u;
+        for( auto i = 0u; i < lhs_extent.rank(); i++){
+            if( i != pos ){
+                arr[j++] = lhs_extent.extent(i);
+            }
+        }
+
+        return type( arr.begin(), arr.end() );
+    }
+
+    
 
 }
 

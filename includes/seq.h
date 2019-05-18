@@ -68,17 +68,17 @@ namespace mdspan::detail{
 
     template< ptrdiff_t dims >
     struct make_seq<dims>{
-        static_assert(dims != static_dims,"Invalid dimensions");
         using type = make_seq_dynamic_t<dims>;
     };
-
-    // template< >
-    // struct make_seq<static_dims>{
-    //     using type = make_seq_impl_t<>;
-    // };
     
-    template< ptrdiff_t el, ptrdiff_t ...Extents >
-    struct make_seq<static_dims, el, Extents...>{
+    template< ptrdiff_t dims, ptrdiff_t el>
+    struct make_seq<dims, el>{
+        using type = make_seq_impl_t<el>;
+    };
+    
+    template< ptrdiff_t dims, ptrdiff_t el, ptrdiff_t ...Extents >
+    struct make_seq<dims, el, Extents...>{
+        static_assert(dims == sizeof...(Extents) + 1," DIMENSION SHOULD BE EQUAL TO THE PARAMETER PACK ");
         using type = make_seq_impl_t<el, Extents...>;
     };
 
@@ -90,6 +90,29 @@ namespace mdspan::detail{
 
     template < ptrdiff_t ...Extents >
     struct is_seq< seq<Extents...> > : std::true_type{};
+
+
+    template< typename S1, typename S2 >
+    struct compare_seq_equal;
+
+    template<>
+    struct compare_seq_equal< seq<>, seq<> >{
+        static constexpr bool value = true;
+    };
+
+    template<ptrdiff_t el, ptrdiff_t ...rhs>
+    struct compare_seq_equal< seq<>, seq<el,rhs...> >{
+        static constexpr bool value = false;
+    };
+
+    template<ptrdiff_t el, ptrdiff_t ...lhs>
+    struct compare_seq_equal< seq<el,lhs...>, seq<> >{
+        static constexpr bool value = false;
+    };
+    template<ptrdiff_t el_1, ptrdiff_t ...lhs,ptrdiff_t el_2, ptrdiff_t ...rhs>
+    struct compare_seq_equal< seq<el_1,lhs...>, seq<el_2,rhs...> >{
+        static constexpr bool value = (el_1 == el_2) && compare_seq_equal< seq<lhs...>, seq<rhs...> >::value;
+    };
 
 }
 

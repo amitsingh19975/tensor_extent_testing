@@ -5,9 +5,11 @@ using namespace std;
 
 int main(int argc, char const *argv[]) {
     
-    extents<static_dims,1,2,3> e; //static dimension
+    extents<3,1,2,3> e; //static dimension
     // extents<static_dims> t; //static dimension
-    extents<4> f = {1,2,3,4};  //dynamic dimension
+    extents<4> f = {5,6,7,8};  //dynamic dimension
+    auto g = f.squeeze();
+    // cout<<boolalpha<<(f==e)<<'\n';
 
     for(auto i = 0; i < e.rank(); i++){
         cout<<e.static_extent(i)<<' ';
@@ -15,15 +17,10 @@ int main(int argc, char const *argv[]) {
 
     cout<<'\n';
 
-    for(auto i = 0; i < f.rank(); i++){
-        cout<<f.static_extent(i)<<' ';
+    for(auto i = 0; i < g.size(); i++){
+        cout<<g.at(i)<<' ';
     }
 
-    cout<<'\n';
-
-    for(auto i = 0; i < f.rank(); i++){
-        cout<<f.extent(i)<<' ';
-    }
     cout<<'\n';
     return 0;
 }
