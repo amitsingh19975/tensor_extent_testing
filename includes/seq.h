@@ -81,6 +81,11 @@ namespace mdspan::detail{
         static_assert(dims == sizeof...(Extents) + 1," DIMENSION SHOULD BE EQUAL TO THE PARAMETER PACK ");
         using type = make_seq_impl_t<el, Extents...>;
     };
+    
+    template< >
+    struct make_seq< -2 >{
+        using type = seq<>;
+    };
 
     template < ptrdiff_t dims, ptrdiff_t ...Extents >
     using make_seq_t = typename make_seq<dims,Extents...>::type;

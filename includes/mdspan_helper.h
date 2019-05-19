@@ -201,7 +201,11 @@ namespace mdspan{
         return type( arr.begin(), arr.end() );
     }
 
-    
+    template< typename E >
+    struct is_extent : std::false_type{};
+
+    template< ptrdiff_t D, ptrdiff_t ...E  >
+    struct is_extent< extents<D,E...> > : std::true_type{};
 
 }
 
