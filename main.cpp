@@ -23,5 +23,7 @@ int main(int argc, char const *argv[]) {
     // }
 
     // cout<<'\n';
+    test::tensor<int> t;
+    t.insert(0,1);
     return 0;
 }

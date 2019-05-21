@@ -495,11 +495,11 @@ namespace mdspan{
     };
 
     template < ptrdiff_t D, ptrdiff_t ...E >
-    using extent_t = std::conditional_t<
+    using extents_t = std::conditional_t<
         D == dynamic_dims,
         extents<D>,
         std::conditional_t<
-            ( D > 500 ),
+            ( D > 500 || D < 0),
             extents<dynamic_dims>,
             extents<D>
         >
