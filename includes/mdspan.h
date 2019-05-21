@@ -2,7 +2,6 @@
 #define MDSPAN_H
 
 #include "mdspan_helper.h"
-#include "extents_algorithm.h"
 #include <vector>
 #include <numeric>
 
@@ -548,7 +547,7 @@ namespace mdspan{
         D == dynamic_dims,
         extents<D>,
         std::conditional_t<
-            ( D > 500 || D < 0),
+            ( D > 500 || D <= 0),
             extents<dynamic_dims>,
             extents<D>
         >
