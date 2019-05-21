@@ -17,9 +17,7 @@ namespace compressions_policy{
         // T& at(size_t){return _m[0];}
         T at(size_t) const{return 0;}
         T at(size_t) {return 0;}
-        void insert(T, size_t){
-            
-        }
+        void insert(T, size_t){}
     private:
         std::unordered_map<size_t,T> _m;
     };
@@ -27,14 +25,9 @@ namespace compressions_policy{
 
 namespace storage_type{
     template < typename T, typename C = compressions_policy::map_compression<T>>
-    struct sparse{
+    struct sparse : public C {
         sparse() = default;
-        sparse( std::vector<T> const& obj):_m(obj){}
-
-        T at(size_t k) const { return _m.at(k);}
-        void insert(T val, size_t k){ _m.insert(val,k);}
-    private:
-        C _m;
+        sparse( std::vector<T> const& obj ):C(obj){}
     };
     
     template < typename T, typename A >
