@@ -355,15 +355,15 @@ namespace mdspan{
             return impl::static_extent(k);
         }
 
-        constexpr auto extent(int k) const noexcept {
+        constexpr auto extent(size_type k) const noexcept {
             return impl::extent(k);
         }
 
-        constexpr auto at(int k) const noexcept {
+        constexpr auto at(size_type k) const noexcept {
             return extent(k);
         }
 
-        constexpr auto size(int k) const noexcept {
+        constexpr auto size(size_type k) const noexcept {
             return impl::size(k);
         }
 
@@ -394,11 +394,11 @@ namespace mdspan{
         }
 
         constexpr auto begin() const noexcept{
-            return 0u;
+            return Iterator<decltype(*this)>(*this,0);
         }
 
         constexpr auto end() const noexcept{
-            return rank();
+            return Iterator<decltype(*this)>(*this,rank());
         }
 
         constexpr bool is_vector() const noexcept{
@@ -414,9 +414,9 @@ namespace mdspan{
             auto equal_one   = [](auto const& a){ return a == 1;};
 
             return
-                any_of(*this, begin(), begin() + 2, greater_one) &&
-                any_of(*this, begin(), begin() + 2, equal_one  ) &&
-                all_of(*this, begin() + 2, end(), equal_one);
+                std::any_of(begin(), begin() + 2, greater_one) &&
+                std::any_of(begin(), begin() + 2, equal_one  ) &&
+                std::all_of(begin() + 2, end(), equal_one);
         }
 
         constexpr bool is_matrix() const noexcept{
@@ -428,8 +428,8 @@ namespace mdspan{
             auto equal_one   = [](auto const& a){ return a == 1;};
 
             return
-                all_of ( *this, begin(), begin() + 2, greater_one) &&
-                all_of ( *this, begin() + 2, end(),     equal_one  );
+                std::all_of ( begin(), begin() + 2, greater_one) &&
+                std::all_of ( begin() + 2, end(),     equal_one  );
         }
 
         constexpr bool is_tensor() const noexcept{
@@ -439,7 +439,7 @@ namespace mdspan{
 
             auto greater_one = [](auto const& a){ return a > 1;};
 
-            return any_of(*this,begin() + 2, end(), greater_one);
+            return std::any_of(begin() + 2, end(), greater_one);
         }
 
         auto to_vector() const noexcept{
@@ -457,7 +457,7 @@ namespace mdspan{
         constexpr bool valid() const noexcept{
             return
                 rank() > 1 &&
-                none_of(*this, begin(), end(),
+                std::none_of(begin(), end(),
                             [](auto const& a){ return a == ptrdiff_t(0); });
         }
 
@@ -467,6 +467,9 @@ namespace mdspan{
 
         template< ptrdiff_t rhs_dims, ptrdiff_t ... rhs >
         constexpr auto operator==(extents<rhs_dims,rhs...> const& other) const noexcept{
+            if (rank() != other.rank()){
+                return false;
+            }
             for(auto i = 0u; i < rank(); i++){
                 if(other.at(i) != at(i))
                     return false;
@@ -492,6 +495,52 @@ namespace mdspan{
 
     private:
         using impl = detail::extents_impl< 0, detail::make_seq_t<dims, StaticExtents...> > ;
+        
+        template< typename Parent >
+        struct Iterator{
+
+            Iterator(Parent const& p,size_type pos):_p(p),_pos(pos){}
+
+            bool operator==( Iterator const& rhs){
+                return rhs._pos == _pos;
+            }
+
+            bool operator!=( Iterator const& rhs){
+                return !(*this == rhs);
+            }
+
+            Iterator& operator++(){
+                ++_pos;
+                return *this;
+            }
+
+            Iterator operator++(int){
+                auto temp = *this;
+                ++(*this);
+                return temp;
+            }
+
+            Iterator operator+(size_type k){
+                assert(k >= size_type{0} && k < impl::Rank && _pos + k < impl::Rank);
+                auto temp = *this;
+                temp._pos += k;
+                return temp;
+            }
+
+            Iterator& operator+=(size_type k){
+                assert(k >= size_type{0} && k < impl::Rank && _pos + k < impl::Rank);
+                _pos += k;
+                return *this;
+            }
+
+            constexpr auto operator*() const noexcept {
+                return _p.at(_pos);
+            }
+
+        private:
+            Parent const& _p;
+            size_type _pos{0};
+        };
     };
 
     template < ptrdiff_t D, ptrdiff_t ...E >

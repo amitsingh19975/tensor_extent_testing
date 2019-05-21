@@ -7,21 +7,23 @@
 
 namespace mdspan::detail{
 
-    template< int R, typename Seq >
+    template< ptrdiff_t R, typename Seq >
     struct extents_impl;
 
-    template< int R >
+    template< ptrdiff_t R >
     struct extents_impl< R , seq<> >{
         using next = extents_impl;
+        using current = extents_impl< R , seq<> > ;
 
-        static constexpr int Rank           = 0;
-        static constexpr int DynamicRank    = 0;
+        static constexpr ptrdiff_t Rank           = 0;
+        static constexpr ptrdiff_t DynamicRank    = 0;
         static constexpr ptrdiff_t staticN  = 1;
         static constexpr ptrdiff_t N        = 1;
 
-        static constexpr auto static_extent(int) noexcept {return ptrdiff_t{1};}
-        constexpr auto extent(int) const noexcept {return ptrdiff_t{1};}
-        constexpr auto size(int) const noexcept {return ptrdiff_t{1};}
+        static constexpr auto static_extent(ptrdiff_t) noexcept {return ptrdiff_t{1};}
+        constexpr auto extent(ptrdiff_t) const noexcept {return ptrdiff_t{1};}
+        constexpr auto extent() const noexcept {return ptrdiff_t{1};}
+        constexpr auto size(ptrdiff_t) const noexcept {return ptrdiff_t{1};}
         constexpr auto size() const noexcept {return ptrdiff_t{1};}
 
         template<typename IndexType, typename ...Args>
@@ -43,27 +45,32 @@ namespace mdspan::detail{
         ~extents_impl() = default;
     };
 
-    template< int R, ptrdiff_t ...Tail >
+    template< ptrdiff_t R, ptrdiff_t ...Tail >
     struct extents_impl< R, seq<dynamic_extent, Tail...> > 
         : extents_impl < R + 1, seq<Tail...> > {
         
         using next = extents_impl < R + 1, seq<Tail...> >;
+        using current = extents_impl< R, seq<dynamic_extent, Tail...> > ;
 
-        static constexpr int Rank           = 1 + next::Rank;
-        static constexpr int DynamicRank    = 1 + next::DynamicRank;
+        static constexpr ptrdiff_t Rank           = 1 + next::Rank;
+        static constexpr ptrdiff_t DynamicRank    = 1 + next::DynamicRank;
         static constexpr ptrdiff_t staticN  = dynamic_extent;
 
         ptrdiff_t N{-1};
 
-        static constexpr auto static_extent( int k ) noexcept{
+        static constexpr auto static_extent( ptrdiff_t k ) noexcept{
             return k == R ? staticN : next::static_extent(k);
         }
 
-        constexpr auto extent( int k ) const noexcept{
+        constexpr auto extent( ptrdiff_t k ) const noexcept{
             return k == R ? N : next::extent(k);
         }
+        
+        constexpr auto extent() const noexcept{
+            return N;
+        }
 
-        constexpr auto size( int k ) const noexcept{
+        constexpr auto size( ptrdiff_t k ) const noexcept{
             return k == R ? N * next::size() : next::size(k);
         }
 
@@ -86,31 +93,35 @@ namespace mdspan::detail{
         template< typename IndexType , typename ... Args >
         constexpr bool in_bounds( IndexType const & idx , Args ... args ) const noexcept
             { return 0 <= idx && idx < N && next::in_bounds( args... ); }
-        
 
         ~extents_impl() = default;
     };
 
-    template< int R, ptrdiff_t SN, ptrdiff_t ...Tail >
+    template< ptrdiff_t R, ptrdiff_t SN, ptrdiff_t ...Tail >
     struct extents_impl< R, seq<SN, Tail...> > 
         : extents_impl < R + 1, seq<Tail...> > {
 
         using next = extents_impl < R + 1, seq<Tail...> >;
+        using current = extents_impl< R, seq<SN, Tail...> > ;
 
-        static constexpr int Rank           = 1 + next::Rank;
-        static constexpr int DynamicRank    = 0 + next::DynamicRank;
+        static constexpr ptrdiff_t Rank           = 1 + next::Rank;
+        static constexpr ptrdiff_t DynamicRank    = 0 + next::DynamicRank;
         static constexpr ptrdiff_t staticN  = SN;
         static constexpr ptrdiff_t N        = SN;
 
-        static constexpr auto static_extent( int k ) noexcept{
+        static constexpr auto static_extent( ptrdiff_t k ) noexcept{
             return k == R ? staticN : next::static_extent(k);
         }
 
-        constexpr auto extent( int k ) const noexcept{
+        constexpr auto extent( ptrdiff_t k ) const noexcept{
             return k == R ? N : next::extent(k);
         }
 
-        constexpr auto size( int k ) const noexcept{
+        constexpr auto extent() const noexcept{
+            return N;
+        }
+
+        constexpr auto size( ptrdiff_t k ) const noexcept{
             return k == R ? N * next::size() : next::size(k);
         }
 
@@ -133,7 +144,6 @@ namespace mdspan::detail{
         template< typename IndexType , typename ... Args >
         constexpr bool in_bounds( IndexType const & idx , Args ... args ) const noexcept
             { return 0 <= idx && idx < N && next::in_bounds( args... ); }
-        
 
         ~extents_impl() = default;
     };
@@ -141,7 +151,7 @@ namespace mdspan::detail{
     template< typename E >
     struct is_extent_impl : std::false_type{};
 
-    template< int R, typename Seq  >
+    template< ptrdiff_t R, typename Seq  >
     struct is_extent_impl< extents_impl<R,Seq> > : std::true_type{};
 
 }
@@ -186,7 +196,7 @@ namespace mdspan{
 
     template < ptrdiff_t dims, ptrdiff_t... lhs>
     auto remove_extent_item(extents< dims, lhs... > const& lhs_extent, size_t pos){
-        static_assert(dims > ptrdiff_t{0});
+        static_assert(dims > ptrdiff_t{0} && pos < dims);
         
         using type = extents< dims - 1 >;
         std::array<ptrdiff_t,dims - 1> arr;
@@ -196,6 +206,24 @@ namespace mdspan{
             if( i != pos ){
                 arr[j++] = lhs_extent.extent(i);
             }
+        }
+
+        return type( arr.begin(), arr.end() );
+    }
+
+    template < ptrdiff_t dims, typename Seq>
+    auto remove_extent_item(detail::extents_impl< 0, Seq > lhs_extent, 
+        size_t const start, size_t const end){
+
+        static_assert(dims > ptrdiff_t{0});
+        assert( start < dims && end <= dims && start < end);
+        
+        using type = detail::extents_impl< 0, detail::make_seq_dynamic_t<dims> >;
+        std::array<ptrdiff_t,dims> arr;
+
+        auto j = 0u;
+        for( auto i = start; i < end; i++){
+            arr[j++] = lhs_extent.extent(i);
         }
 
         return type( arr.begin(), arr.end() );
