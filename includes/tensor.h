@@ -12,7 +12,7 @@ namespace test{
     template< typename T,typename E, typename F, typename A >
     struct tensor;
 
-    template<typename T,typename E = dims<dynamic_dims>,typename F = int, typename A = storage_type::sparse<T> >
+    template<typename T,typename E = dims<dynamic_dims>,typename F = int, typename A = std::vector<T> >
     struct tensor{
         static_assert(is_extent<E>::value,"NOT A EXTENT TYPE");
         T at(int) const{
@@ -21,7 +21,7 @@ namespace test{
         T& at(int){
             return _base.at(0);
         }
-        void insert(T val, size_t k){ _base.insert(val,k);}
+        void set(T val, size_t k){ _base.insert(val,k);}
         
         tensor() = default;
     private:

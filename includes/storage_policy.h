@@ -2,36 +2,57 @@
 #define STORAGE_POLICY_H
 
 #include <unordered_map>
-
-namespace compressions_policy{
-    
-    template< typename T>
-    struct map_compression{
-
-        map_compression(std::vector<T> const& obj){
-            compress(obj);
-        }
-        map_compression() = default;
-        void compress(std::vector<T>);
-        std::vector<T> uncompress();
-        // T& at(size_t){return _m[0];}
-        T at(size_t) const{return 0;}
-        T at(size_t) {return 0;}
-        void insert(T, size_t){}
-    private:
-        std::unordered_map<size_t,T> _m;
-    };
-}
+#include "mdspan.h"
 
 namespace storage_type{
-    template < typename T, typename C = compressions_policy::map_compression<T>>
-    struct sparse : public C {
-        sparse() = default;
-        sparse( std::vector<T> const& obj ):C(obj){}
-    };
+    namespace sparse_tensor{
+        
+        template< typename T >
+        struct storage_interface{
+            virtual void compress() = 0;
+            virtual std::vector<T> uncompress() = 0;
+            virtual T at(size_t) const = 0;
+            virtual void set(T, size_t) = 0;
+            virtual T get(size_t) = 0;
+        };
+
+        template< typename T>
+        struct map_compression: storage_interface<T>{
+            void compress() override {}
+
+            std::vector<T> uncompress() override {return {};}
+            
+            T at(size_t) const override{return 0;}
+
+            void set(T, size_t) override{}
+            T get(size_t) override{return T{};}
+        private:
+            std::unordered_map<size_t,T> _m;
+        };
+
+    }
     
-    template < typename T, typename A >
-    struct dense{};
+    namespace dense_tensor{
+        
+        template< typename T >
+        struct storage_interface{
+            virtual T& at(size_t) = 0;
+            virtual T at(size_t) const = 0;
+            virtual void set(T, size_t) = 0;
+            virtual T get(T, size_t) = 0;
+        };
+
+        template < typename T, typename A >
+        struct dense:storage_interface<T>{
+            T& at(size_t) override {return _m[0];};
+            T at(size_t) const override{return _m[0];};
+            void set(T, size_t) override{};
+            T get(T, size_t) override{return at(0);};
+            std::vector<T> _m;
+        };
+
+    }
+
 }
 
 #endif // STORAGE_POLICY_H
